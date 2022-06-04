@@ -8,4 +8,4 @@
 - [ ] Historical recording of swap events
 - [ ] API service
 
-<br><br>
+### More details about the plan in [Plan.md](docs/Plan.md)
