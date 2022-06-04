@@ -181,6 +181,7 @@ The RPC endpoints will likely look like:
 
 
 ## 2.4. The Roadmap
+[<u>back to contents</u>](#top)
 
 ### Phase 1: Live-streaming of swap events
 
