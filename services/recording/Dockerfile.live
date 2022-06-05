@@ -1,0 +1,23 @@
+# pull official base image
+FROM python:3.9.13-slim-buster
+
+# set work directory
+WORKDIR /usr
+
+# setup gcc for cython support
+RUN apt-get update
+RUN apt-get install -y gcc
+
+# install dependencies
+RUN pip install --upgrade pip
+COPY ./live_requirements.txt requirements.txt
+RUN pip install -r requirements.txt
+
+# copy the source files
+COPY src/lib src/lib
+COPY src/events src/events
+COPY src/live src/live
+COPY live_entrypoint.py entrypoint.py
+
+# start the stream
+CMD ["python", "entrypoint.py"]

@@ -2,8 +2,9 @@
 from typing import TypedDict, Optional
 
 # Code
-from .handlers.base import BaseEventHandler
 from .constants import UNISWAP_LP_SWAP_EVENT_TOPIC
+from .handlers.base import BaseEventHandler
+from .handlers.uniswap.v3_pool.swap import UniswapV3PoolSwapEventHandler
 
 
 class EventMetadata(TypedDict):
@@ -19,11 +20,9 @@ class EventMetadata(TypedDict):
 
 _EVENT_METADATA_MAPPING: dict[str, EventMetadata] = {
     "uniswap-v3-pool-swap": {
-        "category": "swap",
+        "category": "swaps",
         "topic": UNISWAP_LP_SWAP_EVENT_TOPIC,
-        "handler_class": None,
-        # To be implemented
-        # "handler_class": UniswapV3PoolSwapEventHandler,
+        "handler_class": UniswapV3PoolSwapEventHandler,
     }
 }
 

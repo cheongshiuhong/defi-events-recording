@@ -1,5 +1,4 @@
 # Standard libraries
-from typing import Awaitable
 import asyncio
 
 # 3rd party libraries
@@ -44,17 +43,22 @@ class StreamWriter:
         """
         self.__categories[subscription_id] = category
 
-    async def write_forever(
-        self, input_queue: asyncio.Queue[ProcessorOutput]
-    ) -> Awaitable[None]:
+    async def write_forever(self, input_queue: asyncio.Queue[ProcessorOutput]) -> None:
         """
         Reads from the input queue asynchronously and writing them into the database.
 
         Args:
             input_queue: The queue to read from.
         """
+        self.__logger.info("Writing forever...")
+
         while True:
             processor_output = await input_queue.get()
+
+            self.__logger.info(
+                "Writer got event for txn: "
+                + processor_output["data"]["transaction_hash"]
+            )
 
             category = self.__categories[processor_output["subscription_id"]]
             await self.__db[category].insert_one(processor_output["data"])

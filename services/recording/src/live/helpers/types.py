@@ -32,11 +32,8 @@ class GasPriceQuoteCurrency(TypedDict):
 class ProcessorOutputData(TypedDict):
     event_id: str
     transaction_hash: str
-    block_hash: str
     block_number: int
     timestamp: int
-    sender: str
-    recipient: str
     gas_used: str
     gas_price_wei: str
     gas_price_quote: GasPriceQuoteCurrency

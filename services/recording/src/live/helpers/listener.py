@@ -85,6 +85,8 @@ class StreamListener:
                         string_message = await ws.recv()
                         json_message = json.loads(string_message)
 
+                        self.__logger.info("Listener received event...")
+
                         # Parse the internal subscription id
                         eth_sub_id: str = json_message["params"]["subscription"]
                         internal_sub_id = self.__subscription_ids[eth_sub_id]

@@ -21,7 +21,7 @@ from .types import (
 
 class Stream:
     """
-    Main class that composes the listener, processor and writer
+    Main class that composes the listener, processor, and writer
     to stream from the chain into the database.
     """
 
@@ -50,8 +50,8 @@ class Stream:
         Starts the stream asynchronously.
         """
         self.__logger.info("Starting asynchronously...")
-        processor_queue: asyncio.Queue[ListenerOutput] = asyncio.Queue()
-        writer_queue: asyncio.Queue[ProcessorOutput] = asyncio.Queue()
+        processor_queue = asyncio.Queue[ListenerOutput]()
+        writer_queue = asyncio.Queue[ProcessorOutput]()
 
         self.__logger.info("Starting listener, processor, and writer...")
         await asyncio.gather(
@@ -96,6 +96,7 @@ class Stream:
 
         Raises:
             ValueError: When the environment variable is not provided.
+            pricing_config: The pricing config dictionary.
 
         Returns:
             The stream processor instance.
@@ -162,12 +163,14 @@ class Stream:
             contract_address = subscription_config["contract_address"]
 
             # Resolve the event's topic and processor
-            category = EventsResolver.get_category(event_id)
-            topic = EventsResolver.get_topic(event_id)
+            event_category = EventsResolver.get_category(event_id)
+            event_topic = EventsResolver.get_topic(event_id)
             event_handler = EventsResolver.get_handler(event_id, contract_address)
 
             # Add the event to be subscribed to
-            subscription_id = listener.add_event_subscription(contract_address, topic)
+            subscription_id = listener.add_event_subscription(
+                contract_address, event_topic
+            )
 
             # Register the event_id with the processor
             processor.register_event_id(subscription_id, event_id)
@@ -178,4 +181,4 @@ class Stream:
                 processor.register_event_handler(subscription_id, event_handler)
 
             # Add the event's category to the writer
-            writer.register_category(subscription_id, category)
+            writer.register_category(subscription_id, event_category)

@@ -32,9 +32,15 @@ async def test_write_forever(client):
     client().__getitem__().__getitem__().insert_one = mocked_insert_one
 
     # Setup the input queue
+    mocked_data = {"value": "the data", "transaction_hash": "0x123"}
     input_queue = MagicMock()
     input_queue.get = CoroutineMock(
-        side_effect=[{"subscription_id": 0, "data": {"value": "the data"}}]
+        side_effect=[
+            {
+                "subscription_id": 0,
+                "data": mocked_data,
+            }
+        ]
     )
 
     # Initialize the instance and register the category
@@ -45,4 +51,4 @@ async def test_write_forever(client):
     with pytest.raises(RuntimeError):
         await instance.write_forever(input_queue)
 
-    mocked_insert_one.assert_called_with({"value": "the data"})
+    mocked_insert_one.assert_called_with(mocked_data)

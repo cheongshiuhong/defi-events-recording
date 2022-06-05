@@ -84,20 +84,29 @@ class StreamProcessor:
 
             while True:
                 listener_output = await input_queue.get()
+
+                self.__logger.info(
+                    "Processor got event for txn: "
+                    + listener_output["event_log"]["transactionHash"]
+                )
+
                 subscription_id = listener_output["subscription_id"]
                 event_log = listener_output["event_log"]
 
                 # Fetch the block timestamp
                 block_timestamp_task = asyncio.create_task(
                     self.__fetch_block_timestamp(
-                        session, self.__rpc_uri, event_log["blockHash"]
+                        self.__logger, session, self.__rpc_uri, event_log["blockHash"]
                     )
                 )
 
                 # Fetch the transaction receipt
                 transaction_receipt_task = asyncio.create_task(
                     self.__fetch_transaction_receipt(
-                        session, self.__rpc_uri, event_log["transactionHash"]
+                        self.__logger,
+                        session,
+                        self.__rpc_uri,
+                        event_log["transactionHash"],
                     )
                 )
 
@@ -139,11 +148,8 @@ class StreamProcessor:
                         data=ProcessorOutputData(
                             event_id=self.__event_ids[subscription_id],
                             transaction_hash=event_log["transactionHash"],
-                            block_hash=event_log["blockHash"],
                             block_number=int(event_log["blockNumber"], 16),
                             timestamp=block_timestamp,
-                            sender=transaction_receipt["from"],
-                            recipient=transaction_receipt["to"],
                             gas_used=str(gas_used),
                             gas_price_wei=str(gas_price_wei),
                             gas_price_quote={
@@ -161,7 +167,10 @@ class StreamProcessor:
     @staticmethod
     @alru_cache(maxsize=16)
     async def __fetch_block_timestamp(
-        session: aiohttp.ClientSession, rpc_uri: str, block_hash: str
+        logger: RecordingLogger,
+        session: aiohttp.ClientSession,
+        rpc_uri: str,
+        block_hash: str,
     ) -> int:
         """
         Fetches a block to retrieve its timestamp from the node provider.
@@ -189,7 +198,8 @@ class StreamProcessor:
             json_response = await response.json()
 
             if json_response["result"] is None:
-                await asyncio.sleep(1)
+                logger.info("Got an empty block response... retrying...")
+                await asyncio.sleep(2)
                 continue
 
             return int(json_response["result"]["timestamp"], 16)
@@ -197,7 +207,10 @@ class StreamProcessor:
     @staticmethod
     @alru_cache(maxsize=16)
     async def __fetch_transaction_receipt(
-        session: aiohttp.ClientSession, rpc_uri: str, transaction_hash: str
+        logger: RecordingLogger,
+        session: aiohttp.ClientSession,
+        rpc_uri: str,
+        transaction_hash: str,
     ) -> TransactionReceipt:
         """
         Fetches a transaction receipt from the node provider.
@@ -223,7 +236,8 @@ class StreamProcessor:
             json_response = await response.json()
 
             if json_response["result"] is None:
-                await asyncio.sleep(1)
+                logger.info("Got an empty txn receipt response... retrying...")
+                await asyncio.sleep(2)
                 continue
 
             result: TransactionReceipt = json_response["result"]
