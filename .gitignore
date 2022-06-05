@@ -5,7 +5,7 @@ venv
 
 # Testing outputs
 .coverage
-coverage_html/
+.coverage_html/
 
 # Environment variables
 .env

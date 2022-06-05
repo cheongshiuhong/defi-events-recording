@@ -20,11 +20,6 @@
     - [Phase 3: Dockerizing and writing into database](#phase-3-dockerizing-and-writing-into-database)
     - [Phase 4: Historical recording of swap events](#phase-4-historical-recording-of-swap-events)
     - [Phase 5: API endpoints for fetching data](#phase-5-api-endpoints-for-fetching-data)
-<!-- TBD
-- [3. Usage](#3-usage) 
-    - [3.1. Testing](#31-testing)
-    - [3.2. Building](#32-building)
-    - [3.3. Running](#33-running) -->
 
 
 <br><br>

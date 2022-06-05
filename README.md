@@ -1,8 +1,10 @@
 # DeFi Events Recording Project
 
+Project to record events emitted from Smart Contracts
+
 ## Roadmap
 
-- [ ] Live-streaming of swap events
+- [x] Live-streaming of swap events
 - [ ] Processing of event data
 - [ ] Dockerizing and writing into database
 - [ ] Historical recording of swap events
