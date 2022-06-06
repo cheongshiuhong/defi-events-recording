@@ -114,6 +114,7 @@ class BatchProcessor:
                         ProcessedLog(
                             event_id=event_id,
                             transaction_hash=event_log["transactionHash"],
+                            log_index=int(event_log["logIndex"], 16),
                             block_number=int(event_log["blockNumber"], 16),
                             timestamp=int(event_log["timeStamp"], 16),
                             gas_used=str(gas_used),

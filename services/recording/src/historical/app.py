@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .tasks.router import task_router
 
 
-app = FastAPI(openapi_url="/api/v1/openapi.json", docs_url="/api/v1/docs")
+app = FastAPI(openapi_url="/api/rpc/openapi.json", docs_url="/api/rpc/docs")
 
 app.add_middleware(
     CORSMiddleware,
@@ -15,4 +15,4 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(task_router, prefix="/api/v1/tasks")
+app.include_router(task_router, prefix="/api/rpc/v1/tasks")

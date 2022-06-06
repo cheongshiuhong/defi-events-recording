@@ -164,8 +164,7 @@ The RESTful endpoints will likely look like:
 
 - `api/swaps?transaction_hash=0x12345...`
 - `api/swaps?transaction_hash=0x12345...&event_id=uniswap-v3-pool-swap`
-- `api/swaps?start_block=12345&end_block=54321`
-- `api/swaps?start_time=12345&end_time=54321?limit=10&offset=20`
+- `api/swaps?from_block=12345&to_block=54321`
 
 The RPC endpoints will likely look like:
 

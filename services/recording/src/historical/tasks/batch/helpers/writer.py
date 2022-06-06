@@ -3,6 +3,7 @@ import asyncio
 
 # 3rd party libraries
 from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo import UpdateOne
 
 # Code
 from src.lib.logger import RecordingLogger
@@ -64,4 +65,10 @@ class BatchWriter:
 
             self.__logger.info(f"Writer got {len(processed_logs)} processed events...")
 
-            await collection.insert_many(processed_logs)
+            # Structure the bulk write request
+            bulk_input = []
+            for log in processed_logs:
+                key = {"_id": f'{log["transaction_hash"]}-{log["log_index"]}'}
+                bulk_input.append(UpdateOne(key, {"$set": log}, upsert=True))
+
+            await collection.bulk_write(bulk_input)

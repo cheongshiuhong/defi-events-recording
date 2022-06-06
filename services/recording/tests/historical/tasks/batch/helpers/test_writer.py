@@ -18,11 +18,11 @@ def get_instance():
 @patch("src.historical.tasks.batch.helpers.writer.AsyncIOMotorClient")
 async def test_start_writing(client):
     # Setup the client
-    mocked_insert_many = CoroutineMock()
-    client().__getitem__().__getitem__().insert_many = mocked_insert_many
+    mocked_bulk_write = CoroutineMock()
+    client().__getitem__().__getitem__().bulk_write = mocked_bulk_write
 
     # Setup the mocked input queue (2 inputs of 10 events each, 1 empty)
-    mocked_data = {"value": "the data", "transaction_hash": "0x123"}
+    mocked_data = {"value": "the data", "transaction_hash": "0x123", "log_index": "123"}
     input_queue = MagicMock()
     input_queue.get = CoroutineMock(
         side_effect=[[mocked_data] * 10, [mocked_data] * 10, []]
@@ -34,5 +34,5 @@ async def test_start_writing(client):
     # Async iterator will raise RuntimeError: StopIteration
     await instance.start_writing(input_queue, "category")
 
-    # Should call the insert_many method 2 times
-    assert mocked_insert_many.mock_calls == 2 * [call([mocked_data] * 10)]
+    # Should call the bulk write method 2 times
+    assert len(mocked_bulk_write.mock_calls) == 2

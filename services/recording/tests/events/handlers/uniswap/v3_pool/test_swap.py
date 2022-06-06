@@ -71,7 +71,8 @@ async def test_resolve_context_asynchronously(
 
 @patch("src.events.handlers.uniswap.v3_pool.swap.decode_hex")
 @patch("src.events.handlers.uniswap.v3_pool.swap.decode_abi")
-def test_handle(decode_abi, _decode_hex):
+@patch("src.events.handlers.uniswap.v3_pool.swap.decode_single")
+def test_handle(decode_single, decode_abi, _decode_hex):
     instance = Cls("0x123456")
 
     # Directly set the context
@@ -84,14 +85,15 @@ def test_handle(decode_abi, _decode_hex):
 
     # Setup the decoders
     decode_abi.return_value = [100, -100, 100, 100, 100]
+    decode_single.return_value = "0x123456"
 
     result = instance.handle(
         "0xraw_data", ["event_topic", "sender_topic", "recipient_topic"]
     )
 
     assert result == {
-        "sender": "sender_topic",
-        "recipient": "recipient_topic",
+        "sender": "0x123456",
+        "recipient": "0x123456",
         "symbol_0": "WETH",
         "symbol_1": "WBTC",
         "amount_0": "100",
@@ -106,7 +108,8 @@ def test_handle(decode_abi, _decode_hex):
 
 @patch("src.events.handlers.uniswap.v3_pool.swap.decode_hex")
 @patch("src.events.handlers.uniswap.v3_pool.swap.decode_abi")
-def test_handle_with_zero_amount_0(decode_abi, _decode_hex):
+@patch("src.events.handlers.uniswap.v3_pool.swap.decode_single")
+def test_handle_with_zero_amount_0(decode_single, decode_abi, _decode_hex):
     instance = Cls("0x123456")
 
     # Directly set the context
@@ -119,14 +122,15 @@ def test_handle_with_zero_amount_0(decode_abi, _decode_hex):
 
     # Setup the decoders
     decode_abi.return_value = [0, -100, 100, 100, 100]
+    decode_single.return_value = "0x123456"
 
     result = instance.handle(
         "0xraw_data", ["event_topic", "sender_topic", "recipient_topic"]
     )
 
     assert result == {
-        "sender": "sender_topic",
-        "recipient": "recipient_topic",
+        "sender": "0x123456",
+        "recipient": "0x123456",
         "symbol_0": "WETH",
         "symbol_1": "WBTC",
         "amount_0": "0",
@@ -141,7 +145,8 @@ def test_handle_with_zero_amount_0(decode_abi, _decode_hex):
 
 @patch("src.events.handlers.uniswap.v3_pool.swap.decode_hex")
 @patch("src.events.handlers.uniswap.v3_pool.swap.decode_abi")
-def test_handle_with_zero_amount_1(decode_abi, _decode_hex):
+@patch("src.events.handlers.uniswap.v3_pool.swap.decode_single")
+def test_handle_with_zero_amount_1(decode_single, decode_abi, _decode_hex):
     instance = Cls("0x123456")
 
     # Directly set the context
@@ -154,14 +159,15 @@ def test_handle_with_zero_amount_1(decode_abi, _decode_hex):
 
     # Setup the decoders
     decode_abi.return_value = [100, 0, 100, 100, 100]
+    decode_single.return_value = "0x123456"
 
     result = instance.handle(
         "0xraw_data", ["event_topic", "sender_topic", "recipient_topic"]
     )
 
     assert result == {
-        "sender": "sender_topic",
-        "recipient": "recipient_topic",
+        "sender": "0x123456",
+        "recipient": "0x123456",
         "symbol_0": "WETH",
         "symbol_1": "WBTC",
         "amount_0": "100",

@@ -8,7 +8,7 @@ Project to record events emitted from Smart Contracts
 - [x] Processing of event data
 - [x] Dockerizing and writing into database
 - [x] Historical recording of swap events
-- [ ] API service
+- [x] API service
 
 ## 0. More details about the plan in [Plan.md](docs/0_Plan.md)
 

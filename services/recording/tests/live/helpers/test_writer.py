@@ -26,11 +26,11 @@ def test_register_category(_client):
 @patch("src.live.helpers.writer.AsyncIOMotorClient")
 async def test_write_forever(client):
     # Setup the client
-    mocked_insert_one = CoroutineMock()
-    client().__getitem__().__getitem__().insert_one = mocked_insert_one
+    mocked_update_one = CoroutineMock()
+    client().__getitem__().__getitem__().update_one = mocked_update_one
 
     # Setup the input queue
-    mocked_data = {"value": "the data", "transaction_hash": "0x123"}
+    mocked_data = {"value": "the data", "transaction_hash": "0x123", "log_index": 123}
     input_queue = MagicMock()
     input_queue.get = CoroutineMock(
         side_effect=[
@@ -49,4 +49,5 @@ async def test_write_forever(client):
     with pytest.raises(RuntimeError):
         await instance.write_forever(input_queue)
 
-    mocked_insert_one.assert_called_with(mocked_data)
+    # Should call the update one method
+    mocked_update_one.assert_called()

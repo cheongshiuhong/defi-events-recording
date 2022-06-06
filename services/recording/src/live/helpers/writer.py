@@ -61,4 +61,7 @@ class StreamWriter:
             )
 
             category = self.__categories[processor_output["subscription_id"]]
-            await self.__db[category].insert_one(processor_output["data"])
+            data = processor_output["data"]
+
+            key = {"_id": f'{data["transaction_hash"]}-{data["log_index"]}'}
+            await self.__db[category].update_one(key, {"$set": data}, upsert=True)

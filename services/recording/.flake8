@@ -1,0 +1,33 @@
+[flake8]
+# Base configuration
+strict = 1
+statistics = True
+doctests = True
+max-line-length = 88
+exclude =
+    venv
+    tests
+
+# Docstrings plugin
+docstring-convention = google
+
+# http://pep8.readthedocs.org/en/latest/intro.html#error-codes
+ignore =
+    D100 # Missing docstring in public module
+    D104 # Missing docstring in public package
+    D107 # Missing docstring in __init__
+    D105 # Missing docstring in magic method (e.g. __str__, __repr__)
+    D205 # 1 blank line required between summary line and description
+    D212 # Multi-line docstring summary should start at the first line
+    D415 # First line should end with a period, question mark, or exclamation point
+    D200 # One-line docstring should fit on one line with quotes
+    W503 # Line break before binary operator
+    D301 # Use r""" if any backslashes in a docstring
+
+# Disable import but not used for __init__.py files
+# Disable class docstring requirements for certain files
+per-file-ignores =
+    __init__.py: F401
+    types.py: D101
+    models.py: D101
+    task.py: D101

@@ -22,6 +22,7 @@ ignore =
     D415 # First line should end with a period, question mark, or exclamation point
     D200 # One-line docstring should fit on one line with quotes
     W503 # Line break before binary operator
+    D301 # Use r""" if any backslashes in a docstring
 
 # Disable import but not used for __init__.py files
 # Disable class docstring requirements for certain files

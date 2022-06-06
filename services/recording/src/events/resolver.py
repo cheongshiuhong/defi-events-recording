@@ -72,7 +72,8 @@ class EventsResolver:
         if handler_class is None:
             return None
 
-        return handler_class(contract_address)
+        handler: BaseEventHandler = handler_class(contract_address)
+        return handler
 
     @staticmethod
     def __get_metadata(event_id: str) -> EventMetadata:

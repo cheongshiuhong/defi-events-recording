@@ -23,7 +23,7 @@ After which, the stream will continue like this:
 
 ## The Historical Batch Recorder
 
-We have also successfully written a batch recorder to record events queried from EtherScan into the database. This can be invoked via a `POST` request to the RPC endpoint `/api/v1/tasks/record_historical_events`, with the body containing the parameters:
+We have also successfully written a batch recorder to record events queried from EtherScan into the database. This can be invoked via a `POST` request to the RPC endpoint `/rpc/v1/tasks/record_historical_events`, with the body containing the parameters:
 - `event_id`
 - `contract_address`
 - `from_block`

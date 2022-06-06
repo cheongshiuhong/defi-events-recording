@@ -24,19 +24,20 @@ class TransactionReceipt(TypedDict):
     effectiveGasPrice: str
 
 
-class GasPriceQuoteCurrency(TypedDict):
+class GasPriceQuote(TypedDict):
     currency: str
     value: str
 
 
-class ProcessorOutputData(TypedDict):
+class ProcessedLog(TypedDict):
     event_id: str
     transaction_hash: str
+    log_index: int
     block_number: int
     timestamp: int
     gas_used: str
     gas_price_wei: str
-    gas_price_quote: GasPriceQuoteCurrency
+    gas_price_quote: GasPriceQuote
     address: str
     topics: list[str]
     raw_data: str
@@ -45,4 +46,4 @@ class ProcessorOutputData(TypedDict):
 
 class ProcessorOutput(TypedDict):
     subscription_id: int
-    data: ProcessorOutputData
+    data: ProcessedLog

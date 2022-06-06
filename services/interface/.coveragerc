@@ -3,13 +3,11 @@ branch = True
 parallel = True
 omit =
     */__init__.py
-    */app.py
-    */worker.py
-    */task.py
     */models.py
     */types.py
 
 [report]
+show_missing = True
 skip_empty = True
 fail_under = 100
 

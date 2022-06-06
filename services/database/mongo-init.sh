@@ -20,6 +20,7 @@ db.getSiblingDB("database").getCollection("swaps").createIndex({ "block_hash": 1
 db.getSiblingDB("database").getCollection("swaps").createIndex({ "block_number": 1 });
 db.getSiblingDB("database").getCollection("swaps").createIndex({ "timestamp": 1 });
 db.getSiblingDB("database").getCollection("swaps").createIndex({ "transaction_hash": 1 });
+db.getSiblingDB("database").getCollection("swaps").createIndex({ "address": 1 });
 db.getSiblingDB("database").getCollection("swaps").createIndex({ "data.symbol_0": 1 });
 db.getSiblingDB("database").getCollection("swaps").createIndex({ "data.symbol_1": 1 });
 EOF

@@ -150,8 +150,8 @@ class UniswapV3PoolSwapEventHandler(BaseEventHandler):
             swap_price_1 = -(self.swap_price_1_scaling_factor * amount_0 // amount_1)
 
         # Retrieve the indexed topics
-        sender = topics[1]
-        recipient = topics[2]
+        sender = decode_single("address", decode_hex(topics[1]))
+        recipient = decode_single("address", decode_hex(topics[2]))
 
         return {
             "sender": sender,

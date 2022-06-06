@@ -13,7 +13,7 @@ from src.events import BaseEventHandler
 from .types import (
     ListenerOutput,
     TransactionReceipt,
-    ProcessorOutputData,
+    ProcessedLog,
     ProcessorOutput,
 )
 
@@ -229,9 +229,10 @@ class StreamProcessor:
         await output_queue.put(
             ProcessorOutput(
                 subscription_id=subscription_id,
-                data=ProcessorOutputData(
+                data=ProcessedLog(
                     event_id=self.__event_ids[subscription_id],
                     transaction_hash=event_log["transactionHash"],
+                    log_index=int(event_log["logIndex"], 16),
                     block_number=int(event_log["blockNumber"], 16),
                     timestamp=block_timestamp,
                     gas_used=str(gas_used),
@@ -330,9 +331,10 @@ class StreamProcessor:
             await output_queue.put(
                 ProcessorOutput(
                     subscription_id=subscription_id,
-                    data=ProcessorOutputData(
+                    data=ProcessedLog(
                         event_id=self.__event_ids[subscription_id],
                         transaction_hash=transaction_hash,
+                        log_index=int(event_log["logIndex"], 16),
                         block_number=int(event_log["blockNumber"], 16),
                         timestamp=block_timestamp,
                         gas_used=str(gas_used),
