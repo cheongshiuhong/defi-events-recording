@@ -31,7 +31,7 @@ We have also successfully written a batch recorder to record events queried from
 
 For the case of the specific USDC-WETH pool, the `event_id` will be `uniswap-v3-pool-swap` and the `contract_address` will be `0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640`.
 
-Note: we are using Redis to queue the tasks and Celery to handle them. 
+Note: we are using Redis to queue the tasks and Celery to handle them, with the RPC endpoint exposed with FastAPI.
 
 <br>
 
