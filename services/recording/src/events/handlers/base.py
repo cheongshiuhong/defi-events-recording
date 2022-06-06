@@ -19,7 +19,17 @@ class BaseEventHandler(ABC):
         return f"Event handler for contract: {self.contract_address}"
 
     @abstractmethod
-    def resolve_context(self, rpc_uri: str) -> None:
+    def resolve_context_synchronously(self, rpc_uri: str) -> None:
+        """
+        Resolves contextual information for the handler to modify the handling process.
+
+        Args:
+            rpc_uri: The rpc_uri to read from the chain.
+            contract_address: The contract's address to send the call to.
+        """
+
+    @abstractmethod
+    async def resolve_context_asynchronously(self, rpc_uri: str) -> None:
         """
         Resolves contextual information for the handler to modify the handling process.
 

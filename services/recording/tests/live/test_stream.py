@@ -19,6 +19,9 @@ MOCKED_ENVIRONMENT = {
     "DB_PORT": "port",
 }
 
+# Clear the environment
+os.environ = {}
+
 
 def get_instance():
     config = {
@@ -107,7 +110,7 @@ def test_initialization_with_event_handler(
         instance = get_instance()
 
     # Handler should have its context resolved
-    event_handler.resolve_context.assert_called()
+    event_handler.resolve_context_synchronously.assert_called()
 
     # Processor should register the event handler
     processor().register_event_handler.assert_called()
@@ -143,7 +146,8 @@ def test_start_synchronously(_listener, _processor, _writer, _events_resolver, a
     instance.start_synchronously()
 
     # Should call the asynchronous version of the method through asyncio
-    asyncio.run.assert_called_with(instance.start_asynchronously())
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete.assert_called_with(instance.start_asynchronously())
 
 
 @pytest.mark.asyncio

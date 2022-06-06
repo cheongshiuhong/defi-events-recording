@@ -39,14 +39,15 @@ class UniswapV3PoolSwapEventHandler(BaseEventHandler):
     def __str__(self):
         return super().__str__() + f" ({self.symbol_0}-{self.symbol_1})"
 
-    def resolve_context(self, rpc_uri: str) -> None:
+    def resolve_context_synchronously(self, rpc_uri: str) -> None:
         """
         Resolves the requried contextual data.
 
         Args:
             rpc_uri: The node provider's rpc uri to resolve the context with.
         """
-        asyncio.run(self.resolve_context_asynchronously(rpc_uri))
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(self.resolve_context_asynchronously(rpc_uri))
 
     async def resolve_context_asynchronously(self, rpc_uri: str) -> None:
         """
@@ -138,11 +139,15 @@ class UniswapV3PoolSwapEventHandler(BaseEventHandler):
         decoded_data = decode_abi(self.EVENT_DECODE_TYPES, decode_hex(raw_data))
         amount_0, amount_1, sqrt_price_x96, liquidity, tick = decoded_data
 
-        # Swap price 0 = price of token_0 quoted in token_1
-        swap_price_0 = -(self.swap_price_0_scaling_factor * amount_1 // amount_0)
+        # Guard against 0 amounts (division by zero)
+        if amount_0 == 0 or amount_1 == 0:
+            swap_price_0 = swap_price_1 = 0
+        else:
+            # Swap price 0 = price of token_0 quoted in token_1
+            swap_price_0 = -(self.swap_price_0_scaling_factor * amount_1 // amount_0)
 
-        # Swap price 1 = price of token_1 quoted in token_0
-        swap_price_1 = -(self.swap_price_1_scaling_factor * amount_0 // amount_1)
+            # Swap price 1 = price of token_1 quoted in token_0
+            swap_price_1 = -(self.swap_price_1_scaling_factor * amount_0 // amount_1)
 
         # Retrieve the indexed topics
         sender = topics[1]

@@ -1,0 +1,4 @@
+batch:
+  gas_pricing:
+    gas_currency: "ETH"
+    quote_currency: "USDT"

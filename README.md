@@ -10,4 +10,6 @@ Project to record events emitted from Smart Contracts
 - [ ] Historical recording of swap events
 - [ ] API service
 
-### More details about the plan in [Plan.md](docs/Plan.md)
+## 0. More details about the plan in [Plan.md](docs/0_Plan.md)
+
+## 1. Interim update in [Interim.md](docs/1_Interim.md)

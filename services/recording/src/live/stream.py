@@ -43,7 +43,8 @@ class Stream:
         """
         Starts the stream synchronously.
         """
-        asyncio.run(self.start_asynchronously())
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(self.start_asynchronously())
 
     async def start_asynchronously(self) -> None:
         """
@@ -177,7 +178,7 @@ class Stream:
 
             # Also register the handler if it exists
             if event_handler is not None:
-                event_handler.resolve_context(node_provider_rpc_uri)
+                event_handler.resolve_context_synchronously(node_provider_rpc_uri)
                 processor.register_event_handler(subscription_id, event_handler)
 
             # Add the event's category to the writer

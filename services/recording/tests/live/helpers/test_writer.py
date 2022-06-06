@@ -16,7 +16,6 @@ def get_instance():
 
 @patch("src.live.helpers.writer.AsyncIOMotorClient")
 def test_register_category(_client):
-    """ """
     instance = get_instance()
     instance.register_category(0, "category_0")
     instance.register_category(1, "category_1")
@@ -26,7 +25,6 @@ def test_register_category(_client):
 @pytest.mark.asyncio
 @patch("src.live.helpers.writer.AsyncIOMotorClient")
 async def test_write_forever(client):
-    """ """
     # Setup the client
     mocked_insert_one = CoroutineMock()
     client().__getitem__().__getitem__().insert_one = mocked_insert_one

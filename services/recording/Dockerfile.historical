@@ -10,11 +10,10 @@ RUN apt-get install -y gcc
 
 # install dependencies
 RUN pip install --upgrade pip
-COPY ./live_requirements.txt requirements.txt
+COPY ./historical_requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 
 # copy the source files
 COPY src/lib src/lib
 COPY src/events src/events
-COPY src/live src/live
-COPY live_entrypoint.py entrypoint.py
+COPY src/historical src/historical

@@ -12,7 +12,10 @@ def test_abstract_class_uninstantiable():
 
 def test_sub_class_initialization():
     class SubClass(BaseEventHandler):
-        def resolve_context(self, rpc_uri: str):
+        def resolve_context_synchronously(self, rpc_uri: str):
+            pass
+
+        def resolve_context_asynchronously(self, rpc_uri: str):
             pass
 
         def handle(self, raw_data: str, topics: list[str]) -> dict[str, str]:

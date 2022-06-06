@@ -1,4 +1,5 @@
 # Standard libraries
+from collections import defaultdict
 import asyncio
 import json
 
@@ -15,6 +16,12 @@ from .types import (
     ProcessorOutputData,
     ProcessorOutput,
 )
+
+
+class NoTxnReceiptException(BaseException):
+    """
+    Custom exception for transaction receipts not being found.
+    """
 
 
 class StreamProcessor:
@@ -41,8 +48,8 @@ class StreamProcessor:
         self.__rpc_uri = rpc_uri
         self.__gas_currency = gas_currency
         self.__quote_currency = quote_currency
-        self.__event_ids = dict()
-        self.__event_handlers = dict()
+        self.__event_ids = {}
+        self.__event_handlers = {}
 
     def register_event_id(self, subscription_id: int, event_id: str) -> None:
         """
@@ -80,89 +87,269 @@ class StreamProcessor:
             output_queue: The queue to put into after processing.
         """
         self.__logger.info("StreamProcessor processing forever...")
-        async with aiohttp.ClientSession() as session:
 
-            while True:
-                listener_output = await input_queue.get()
+        # Local state to track the events to retry processing
+        events_to_retry = defaultdict[str, list[ListenerOutput]](list[ListenerOutput])
 
-                self.__logger.info(
-                    "Processor got event for txn: "
-                    + listener_output["event_log"]["transactionHash"]
-                )
+        while True:
+            # Always try to reset session if connection failed
+            async with aiohttp.ClientSession() as session:
+                # Catch connection-level exceptions
+                try:
+                    while True:
+                        listener_output = await input_queue.get()
 
-                subscription_id = listener_output["subscription_id"]
-                event_log = listener_output["event_log"]
+                        self.__logger.info(
+                            "Processor got event for txn: "
+                            + listener_output["event_log"]["transactionHash"]
+                        )
 
-                # Fetch the block timestamp
-                block_timestamp_task = asyncio.create_task(
-                    self.__fetch_block_timestamp(
-                        self.__logger, session, self.__rpc_uri, event_log["blockHash"]
+                        # Attempt to process the current one
+                        await self.__process_one(
+                            session, listener_output, output_queue, events_to_retry
+                        )
+
+                        # Retry the postponed ones
+                        for transaction_hash in list(events_to_retry.keys()):
+                            self.__logger.info(
+                                f"Processor retrying {transaction_hash}..."
+                            )
+                            # Remove from dict if retry successful
+                            if await self.__retry_transaction_events(
+                                session,
+                                transaction_hash,
+                                events_to_retry[transaction_hash],
+                                output_queue,
+                            ):
+                                events_to_retry.pop(transaction_hash)
+
+                except aiohttp.client_exceptions.ClientConnectionError:
+                    self.__logger.info(
+                        "Client connection error... Recreating session..."
                     )
-                )
+                    await asyncio.sleep(1)
 
-                # Fetch the transaction receipt
-                transaction_receipt_task = asyncio.create_task(
-                    self.__fetch_transaction_receipt(
-                        self.__logger,
-                        session,
-                        self.__rpc_uri,
-                        event_log["transactionHash"],
+                except Exception as e:
+                    self.__logger.error(
+                        f"Unhandled exception {str(e)}. Processor stopped."
                     )
-                )
+                    raise e
 
-                # Wait for the block timestamp before fetching the gas currency price
-                block_timestamp = await block_timestamp_task
+    async def __process_one(
+        self,
+        session: aiohttp.ClientSession,
+        listener_output: ListenerOutput,
+        output_queue: asyncio.Queue[ProcessorOutput],
+        events_to_retry: defaultdict[str, list[ListenerOutput]],
+    ) -> None:
+        """
+        Processes a single event log, calling the corresponding handlers if they exist.
 
-                # Fetch the gas currency price
-                gas_currency_price_task = asyncio.create_task(
-                    self.__fetch_gas_currency_price(
-                        session,
-                        self.__gas_currency,
-                        self.__quote_currency,
-                        block_timestamp,
-                    )
-                )
+        Puts into output queue if successful.
+        Puts into the events_to_retry dictionary if fails.
 
-                transaction_receipt, (int_price, decimals,) = await asyncio.gather(
-                    transaction_receipt_task, gas_currency_price_task
-                )
+        Args:
+            session: The async http session to use to make the request.
+            listener_output: The listener's output to process.
+            output_queue: The output queue to write into.
 
-                # Decode the gas prices and compute the gas price as quoted
-                gas_used = int(transaction_receipt["gasUsed"], 16)
-                gas_price_wei = int(transaction_receipt["effectiveGasPrice"], 16)
-                gas_price_quoted_value = (
-                    int_price * gas_used * gas_price_wei // 10**decimals
-                )
+        Returns:
+            Whether the processing was successful.
+        """
+        subscription_id = listener_output["subscription_id"]
+        event_log = listener_output["event_log"]
 
-                # Call the specific handler if it exist
-                handler = self.__event_handlers.get(subscription_id, None)
-                handled_data = (
-                    handler.handle(event_log["data"], event_log["topics"])
-                    if handler is not None
-                    else {}
-                )
+        # If is an event marked as removed, remove from retry dict
+        if event_log["removed"]:
+            self.__logger.info("Remove detected... Removing from retry dict...")
 
-                await output_queue.put(
-                    ProcessorOutput(
-                        subscription_id=subscription_id,
-                        data=ProcessorOutputData(
-                            event_id=self.__event_ids[subscription_id],
-                            transaction_hash=event_log["transactionHash"],
-                            block_number=int(event_log["blockNumber"], 16),
-                            timestamp=block_timestamp,
-                            gas_used=str(gas_used),
-                            gas_price_wei=str(gas_price_wei),
-                            gas_price_quote={
-                                "currency": self.__quote_currency,
-                                "value": str(gas_price_quoted_value),
-                            },
-                            address=event_log["address"],
-                            topics=event_log["topics"],
-                            raw_data=event_log["data"],
-                            data=handled_data,
-                        ),
-                    )
+            # Pop from retry dict if it is in there
+            if events_to_retry.get(event_log["transactionHash"]):
+                events_to_retry.pop(event_log["transactionHash"])
+
+            return
+
+        # Fetch the block timestamp
+        block_timestamp_task = asyncio.create_task(
+            self.__fetch_block_timestamp(
+                self.__logger, session, self.__rpc_uri, event_log["blockHash"]
+            )
+        )
+
+        # Fetch the transaction receipt
+        transaction_receipt_task = asyncio.create_task(
+            self.__fetch_transaction_receipt(
+                self.__logger,
+                session,
+                self.__rpc_uri,
+                event_log["transactionHash"],
+            )
+        )
+
+        # Wait for the block timestamp before fetching the gas currency price
+        block_timestamp = await block_timestamp_task
+
+        # Fetch the gas currency price
+        gas_currency_price_task = asyncio.create_task(
+            self.__fetch_gas_currency_price(
+                session,
+                self.__gas_currency,
+                self.__quote_currency,
+                block_timestamp,
+            )
+        )
+
+        # Catch and postpone if txn receipt not found
+        try:
+            transaction_receipt = await transaction_receipt_task
+        except NoTxnReceiptException:
+            self.__logger.info(
+                f"Txn receipt {event_log['transactionHash']} not found... Postponing..."
+                + str(transaction_receipt_task.exception())
+            )
+            events_to_retry[event_log["transactionHash"]].append(listener_output)
+            return
+
+        # Await the prices
+        int_price, decimals = await gas_currency_price_task
+
+        # Decode the gas prices and compute the gas price as quoted
+        gas_used = int(transaction_receipt["gasUsed"], 16)
+        gas_price_wei = int(transaction_receipt["effectiveGasPrice"], 16)
+        gas_price_quoted_value = int_price * gas_used * gas_price_wei // 10**decimals
+
+        # Call the specific handler if it exist
+        handler = self.__event_handlers.get(subscription_id, None)
+        handled_data = (
+            handler.handle(event_log["data"], event_log["topics"])
+            if handler is not None
+            else {}
+        )
+
+        await output_queue.put(
+            ProcessorOutput(
+                subscription_id=subscription_id,
+                data=ProcessorOutputData(
+                    event_id=self.__event_ids[subscription_id],
+                    transaction_hash=event_log["transactionHash"],
+                    block_number=int(event_log["blockNumber"], 16),
+                    timestamp=block_timestamp,
+                    gas_used=str(gas_used),
+                    gas_price_wei=str(gas_price_wei),
+                    gas_price_quote={
+                        "currency": self.__quote_currency,
+                        "value": str(gas_price_quoted_value),
+                    },
+                    address=event_log["address"],
+                    topics=event_log["topics"],
+                    raw_data=event_log["data"],
+                    data=handled_data,
+                ),
+            )
+        )
+
+    async def __retry_transaction_events(
+        self,
+        session: aiohttp.ClientSession,
+        transaction_hash: str,
+        listener_outputs: list[ListenerOutput],
+        output_queue: asyncio.Queue[ProcessorOutput],
+    ) -> bool:
+        """
+        Processes potentially multiple events under a transaction
+        whose receipt was unavailable.
+
+        Args:
+            session: The async http session to use to make the request.
+            transaction_hash: The transaction to retry getting receipt for.
+            listener_outputs: The outputs from the listener to retry processing.
+            output_queue: The output queue to write into.
+
+        Returns:
+            Whether the processing was successful.
+        """
+        block_hash = listener_outputs[0]["event_log"]["blockHash"]
+
+        # Fetch the block timestamp
+        block_timestamp_task = asyncio.create_task(
+            self.__fetch_block_timestamp(
+                self.__logger, session, self.__rpc_uri, block_hash
+            )
+        )
+
+        # Fetch the transaction receipt
+        transaction_receipt_task = asyncio.create_task(
+            self.__fetch_transaction_receipt(
+                self.__logger,
+                session,
+                self.__rpc_uri,
+                transaction_hash,
+            )
+        )
+
+        # Wait for the block timestamp before fetching the gas currency price
+        block_timestamp = await block_timestamp_task
+
+        # Fetch the gas currency price
+        gas_currency_price_task = asyncio.create_task(
+            self.__fetch_gas_currency_price(
+                session,
+                self.__gas_currency,
+                self.__quote_currency,
+                block_timestamp,
+            )
+        )
+
+        # Wait for the transaction receipt
+        try:
+            transaction_receipt = await transaction_receipt_task
+        except NoTxnReceiptException:
+            # Exit if fail, shall retry again later...
+            return False
+
+        # Await the prices
+        int_price, decimals = await gas_currency_price_task
+
+        # Decode the gas prices and compute the gas price as quoted
+        gas_used = int(transaction_receipt["gasUsed"], 16)
+        gas_price_wei = int(transaction_receipt["effectiveGasPrice"], 16)
+        gas_price_quoted_value = int_price * gas_used * gas_price_wei // 10**decimals
+
+        # Call the specific handlers if they exist
+        for listener_output in listener_outputs:
+            subscription_id = listener_output["subscription_id"]
+            event_log = listener_output["event_log"]
+
+            handler = self.__event_handlers.get(subscription_id, None)
+            handled_data = (
+                handler.handle(event_log["data"], event_log["topics"])
+                if handler is not None
+                else {}
+            )
+
+            await output_queue.put(
+                ProcessorOutput(
+                    subscription_id=subscription_id,
+                    data=ProcessorOutputData(
+                        event_id=self.__event_ids[subscription_id],
+                        transaction_hash=transaction_hash,
+                        block_number=int(event_log["blockNumber"], 16),
+                        timestamp=block_timestamp,
+                        gas_used=str(gas_used),
+                        gas_price_wei=str(gas_price_wei),
+                        gas_price_quote={
+                            "currency": self.__quote_currency,
+                            "value": str(gas_price_quoted_value),
+                        },
+                        address=event_log["address"],
+                        topics=event_log["topics"],
+                        raw_data=event_log["data"],
+                        data=handled_data,
+                    ),
                 )
+            )
+
+        return True
 
     @staticmethod
     @alru_cache(maxsize=16)
@@ -191,6 +378,7 @@ class StreamProcessor:
             "params": [block_hash, False],
         }
 
+        # Simply retry to fetch the block
         while True:
             response = await session.post(rpc_uri, data=json.dumps(body))
 
@@ -205,7 +393,7 @@ class StreamProcessor:
             return int(json_response["result"]["timestamp"], 16)
 
     @staticmethod
-    @alru_cache(maxsize=16)
+    @alru_cache(maxsize=16, cache_exceptions=False)
     async def __fetch_transaction_receipt(
         logger: RecordingLogger,
         session: aiohttp.ClientSession,
@@ -221,6 +409,9 @@ class StreamProcessor:
             rpc_uri: The node provider's rpc uri.
             transaction_hash: The hash of the transaction to fetch.
 
+        Raises:
+            NoTxnReceiptException: If the transaction receipt is not found.
+
         Returns:
             The transaction receipt dictionary
         """
@@ -231,17 +422,19 @@ class StreamProcessor:
             "params": [transaction_hash],
         }
 
-        while True:
-            response = await session.post(rpc_uri, data=json.dumps(body))
-            json_response = await response.json()
+        response = await session.post(rpc_uri, data=json.dumps(body))
+        json_response = await response.json()
 
-            if json_response["result"] is None:
-                logger.info("Got an empty txn receipt response... retrying...")
-                await asyncio.sleep(2)
-                continue
+        # Raise value error if not found
+        if json_response["result"] is None:
+            logger.info(
+                "Got an empty txn receipt response for "
+                f"{transaction_hash}... retrying..."
+            )
+            raise NoTxnReceiptException("transaction receipt not found.")
 
-            result: TransactionReceipt = json_response["result"]
-            return result
+        result: TransactionReceipt = json_response["result"]
+        return result
 
     @staticmethod
     @alru_cache(maxsize=16)

@@ -87,12 +87,13 @@ class StreamListener:
 
                         self.__logger.info("Listener received event...")
 
-                        # Parse the internal subscription id
                         eth_sub_id: str = json_message["params"]["subscription"]
+                        event_log: EventLog = json_message["params"]["result"]
+
+                        # Parse the internal subscription id
                         internal_sub_id = self.__subscription_ids[eth_sub_id]
 
                         # Tag the subscription id and enqueue into the output queue
-                        event_log: EventLog = json_message["params"]["result"]
                         await output_queue.put(
                             ListenerOutput(
                                 subscription_id=internal_sub_id,
@@ -101,8 +102,8 @@ class StreamListener:
                         )
 
                 except websockets.exceptions.ConnectionClosedError:
-                    await asyncio.sleep(0.5)
                     self.__logger.info("Connection closed.. Reconnecting...")
+                    await asyncio.sleep(1)
 
                 except Exception as e:
                     self.__logger.error(

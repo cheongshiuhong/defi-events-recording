@@ -22,7 +22,6 @@ MOCKED_EVENT_METADATA_MAPPING = {
 
 
 def test_get_category():
-    """ """
     with patch.dict(
         "src.events.resolver._EVENT_METADATA_MAPPING", MOCKED_EVENT_METADATA_MAPPING
     ):
@@ -34,7 +33,6 @@ def test_get_category():
 
 
 def test_get_topic():
-    """ """
     with patch.dict(
         "src.events.resolver._EVENT_METADATA_MAPPING", MOCKED_EVENT_METADATA_MAPPING
     ):
@@ -46,7 +44,6 @@ def test_get_topic():
 
 
 def test_get_handler():
-    """ """
     with patch.dict(
         "src.events.resolver._EVENT_METADATA_MAPPING", MOCKED_EVENT_METADATA_MAPPING
     ):

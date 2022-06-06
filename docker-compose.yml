@@ -2,6 +2,9 @@ version: "3.7"
 
 services:
 
+  # --------------
+  # The database
+  # --------------
   database:
     image: mongo:5.0
     restart: always
@@ -18,10 +21,15 @@ services:
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
 
+  # ------------------
+  # Live Recording
+  # - stream service
+  # ------------------
   live:
     build:
       context: ./services/recording
       dockerfile: ./Dockerfile.live
+    command: python entrypoint.py
     volumes:
       - ./configs/live/config.yaml:/usr/config.yaml
     environment:
@@ -36,3 +44,58 @@ services:
       NODE_PROVIDER_RPC_URI: ${NODE_PROVIDER_RPC_URI}
     depends_on:
       - database
+
+  # ----------------------
+  # Historical Recording
+  # - redis as broker
+  # - rpc api service
+  # - celery workers
+  # ----------------------
+  redis:
+    image: redis:alpine
+
+  historical-rpc-api:
+    build:
+      context: ./services/recording
+      dockerfile: ./Dockerfile.historical
+    command: uvicorn src.historical.app:app --host 0.0.0.0 --port 80
+    ports:
+      - 80:80
+    volumes:
+      - ./configs/historical/config.yaml:/usr/config.yaml
+    environment:
+      REDIS_URI: "redis://redis:6379"
+      # hard-coded since it refers to the database service above
+      DB_HOST: database
+      DB_PORT: 27017
+      # read from .env file
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      ETHERSCAN_API_KEY: ${ETHERSCAN_API_KEY}
+      NODE_PROVIDER_RPC_URI: ${NODE_PROVIDER_RPC_URI}
+    depends_on:
+      - redis
+
+  historical-workers:
+    build:
+      context: ./services/recording
+      dockerfile: Dockerfile.historical
+    # Limit concurrency to prevent etherscan rate limits
+    command: celery -A src.historical worker -l INFO --concurrency=2 --uid nobody --gid nogroup
+    volumes:
+      - ./configs/historical/config.yaml:/usr/config.yaml
+    environment:
+      REDIS_URI: "redis://redis:6379"
+      # hard-coded since it refers to the database service above
+      DB_HOST: database
+      DB_PORT: 27017
+      # read from .env file
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      ETHERSCAN_API_KEY: ${ETHERSCAN_API_KEY}
+      NODE_PROVIDER_RPC_URI: ${NODE_PROVIDER_RPC_URI}
+    depends_on:
+      - database
+      - redis

@@ -34,7 +34,6 @@ def test_add_event_subscription():
 @pytest.mark.asyncio
 @patch("websockets.connect")
 async def test_listen_forever(mocked_ws_connect):
-    """ """
     ws_context = await mocked_ws_connect().__aenter__()
     ws_context.send = CoroutineMock()
     ws_context.recv = CoroutineMock(
@@ -84,7 +83,6 @@ async def test_listen_forever(mocked_ws_connect):
 @pytest.mark.asyncio
 @patch("websockets.connect")
 async def test_listen_forever_with_retry(mocked_ws_connect):
-    """ """
     ws_context = await mocked_ws_connect().__aenter__()
     ws_context.send = CoroutineMock()
 
@@ -105,7 +103,7 @@ async def test_listen_forever_with_retry(mocked_ws_connect):
                     "id": 1,
                     "params": {
                         "subscription": "subscription_id_123",
-                        "result": {"value": "the result dictionary"},
+                        "result": {"value": "the result dictionary", "removed": False},
                     },
                 }
             ),
@@ -116,7 +114,7 @@ async def test_listen_forever_with_retry(mocked_ws_connect):
     mocked_output_queue = MagicMock()
     mocked_output_queue.put = CoroutineMock(
         side_effect=[
-            ConnectionClosedError(True, "close connection to test retry"),
+            ConnectionClosedError(True, "close to test retry"),
             None,
         ]
     )
@@ -136,7 +134,7 @@ async def test_listen_forever_with_retry(mocked_ws_connect):
         call(
             {
                 "subscription_id": subscription_id,
-                "event_log": {"value": "the result dictionary"},
+                "event_log": {"value": "the result dictionary", "removed": False},
             }
         ),
     ]

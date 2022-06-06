@@ -12,20 +12,18 @@ from src.events.handlers.uniswap.v3_pool.swap import (
 
 
 def test_initialization_and_magics():
-    """
-    Simple initialization no-error check
-    """
+    # Simple initialization no-error check
     instance = Cls("0x123456")
     instance.__repr__()
     instance.__str__()
 
 
 @patch("src.events.handlers.uniswap.v3_pool.swap.asyncio")
-def test_resolve_context(asyncio):
+def test_resolve_context_synchronously(asyncio):
     instance = Cls("0x123456")
 
     instance.resolve_context_asynchronously = MagicMock()
-    instance.resolve_context("rpc_uri")
+    instance.resolve_context_synchronously("rpc_uri")
 
     assert asyncio.run.is_called()
     assert instance.resolve_context_asynchronously.is_called()
@@ -39,9 +37,6 @@ def test_resolve_context(asyncio):
 async def test_resolve_context_asynchronously(
     aiohttp, decode_single, decode_abi, decode_hex
 ):
-    """
-    Test the synchronous call to resolve context
-    """
     # Setup the session's return values
     response = MagicMock()
     response.json = CoroutineMock(
@@ -77,7 +72,6 @@ async def test_resolve_context_asynchronously(
 @patch("src.events.handlers.uniswap.v3_pool.swap.decode_hex")
 @patch("src.events.handlers.uniswap.v3_pool.swap.decode_abi")
 def test_handle(decode_abi, _decode_hex):
-    """ """
     instance = Cls("0x123456")
 
     # Directly set the context
@@ -95,8 +89,6 @@ def test_handle(decode_abi, _decode_hex):
         "0xraw_data", ["event_topic", "sender_topic", "recipient_topic"]
     )
 
-    print("RESULT", result)
-
     assert result == {
         "sender": "sender_topic",
         "recipient": "recipient_topic",
@@ -106,6 +98,76 @@ def test_handle(decode_abi, _decode_hex):
         "amount_1": "-100",
         "swap_price_0": "1000000000000000000",  # 18 decimals
         "swap_price_1": "1000000000000000000",  # 18 decimals
+        "sqrt_price_x96": "100",
+        "liquidity": "100",
+        "tick": "100",
+    }
+
+
+@patch("src.events.handlers.uniswap.v3_pool.swap.decode_hex")
+@patch("src.events.handlers.uniswap.v3_pool.swap.decode_abi")
+def test_handle_with_zero_amount_0(decode_abi, _decode_hex):
+    instance = Cls("0x123456")
+
+    # Directly set the context
+    instance.symbol_0 = "WETH"
+    instance.symbol_1 = "WBTC"
+    instance.decimals_0 = 18
+    instance.decimals_1 = 18
+    instance.swap_price_0_scaling_factor = 10**18
+    instance.swap_price_1_scaling_factor = 10**18
+
+    # Setup the decoders
+    decode_abi.return_value = [0, -100, 100, 100, 100]
+
+    result = instance.handle(
+        "0xraw_data", ["event_topic", "sender_topic", "recipient_topic"]
+    )
+
+    assert result == {
+        "sender": "sender_topic",
+        "recipient": "recipient_topic",
+        "symbol_0": "WETH",
+        "symbol_1": "WBTC",
+        "amount_0": "0",
+        "amount_1": "-100",
+        "swap_price_0": "0",
+        "swap_price_1": "0",
+        "sqrt_price_x96": "100",
+        "liquidity": "100",
+        "tick": "100",
+    }
+
+
+@patch("src.events.handlers.uniswap.v3_pool.swap.decode_hex")
+@patch("src.events.handlers.uniswap.v3_pool.swap.decode_abi")
+def test_handle_with_zero_amount_1(decode_abi, _decode_hex):
+    instance = Cls("0x123456")
+
+    # Directly set the context
+    instance.symbol_0 = "WETH"
+    instance.symbol_1 = "WBTC"
+    instance.decimals_0 = 18
+    instance.decimals_1 = 18
+    instance.swap_price_0_scaling_factor = 10**18
+    instance.swap_price_1_scaling_factor = 10**18
+
+    # Setup the decoders
+    decode_abi.return_value = [100, 0, 100, 100, 100]
+
+    result = instance.handle(
+        "0xraw_data", ["event_topic", "sender_topic", "recipient_topic"]
+    )
+
+    assert result == {
+        "sender": "sender_topic",
+        "recipient": "recipient_topic",
+        "symbol_0": "WETH",
+        "symbol_1": "WBTC",
+        "amount_0": "100",
+        "amount_1": "0",
+        "swap_price_0": "0",
+        "swap_price_1": "0",
         "sqrt_price_x96": "100",
         "liquidity": "100",
         "tick": "100",
