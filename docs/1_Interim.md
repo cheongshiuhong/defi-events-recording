@@ -11,13 +11,13 @@ We have successfully written a stream to listen to events from the chain and hav
 
 On starting the stream, this is what we should see:
 
-<img src="./assets/live-recording-startup.jpg" alt="Live Recording Startup Terminal Screenshot" width="1024" />
+<img src="./assets/1_interim/live-recording-startup.jpg" alt="Live Recording Startup Terminal Screenshot" width="1024" />
 
 <br>
 
 After which, the stream will continue like this:
 
-<img src="./assets/live-recording-running.jpg" alt="Live Recording Running Terminal Screenshot" width="1024" />
+<img src="./assets/1_interim/live-recording-running.jpg" alt="Live Recording Running Terminal Screenshot" width="1024" />
 
 <br><br>
 
@@ -37,13 +37,13 @@ Note: we are using Redis to queue the tasks and Celery to handle them, with the 
 
 On starting the service, this is what we should see:
 
-<img src="./assets/historical-rpc-api-startup.jpg" alt="Historical RPC API Startup Terminal Screenshot" width="1024" />
+<img src="./assets/1_interim/historical-rpc-api-startup.jpg" alt="Historical RPC API Startup Terminal Screenshot" width="1024" />
 
 <br>
 
 When the endpoint is invoked, we will get a flow of logs of the batches being processed:
 
-<img src="./assets/historical-rpc-worker-running.jpg" alt="Historical RPC API Worker Running Terminal Screenshot" width="1024" />
+<img src="./assets/1_interimhistorical-rpc-worker-running.jpg" alt="Historical RPC API Worker Running Terminal Screenshot" width="1024" />
 
 <br>
 

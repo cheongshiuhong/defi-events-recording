@@ -45,9 +45,7 @@ async def get_swaps(
 
     <u>Second type (*range-based*)</u>:\n
     - **from_block**: Filters the events larger than or equal to this number.
-        Must be smaller than **to_block**.
     - **to_block**: Filters the events smaller than or equal to this number.
-        Must be larger than **from_block**.
     - **contract_address** (optional):
         Filters the events that are emitted from this address.
     - **limit** (optional):

@@ -10,7 +10,7 @@ run_tests() {
     echo
 
     echo 2. Running type checks with mypy...
-    mypy .
+    mypy --install-types --non-interactive .
     echo
 
     echo 3. Running tests...

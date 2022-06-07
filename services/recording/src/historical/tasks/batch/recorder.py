@@ -65,7 +65,9 @@ class BatchRecorder:
         event_topic = EventsResolver.get_topic(event_id)
         event_category = EventsResolver.get_category(event_id)
         event_handler = EventsResolver.get_handler(event_id, contract_address)
-        await event_handler.resolve_context_asynchronously(self.__rpc_uri)
+
+        if event_handler is not None:
+            await event_handler.resolve_context_asynchronously(self.__rpc_uri)
 
         processor_queue = asyncio.Queue[list[EventLog]]()
         writer_queue = asyncio.Queue[list[ProcessedLog]]()

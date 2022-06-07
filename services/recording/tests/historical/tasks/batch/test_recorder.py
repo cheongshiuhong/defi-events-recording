@@ -149,3 +149,36 @@ async def test_record_asynchronously(loader, processor, writer, events_resolver)
     loader().start_loading.assert_called_once()
     processor().start_processing.assert_called_once()
     writer().start_writing.assert_called_once()
+
+
+@pytest.mark.asyncio
+@patch("src.historical.tasks.batch.recorder.EventsResolver")
+@patch("src.historical.tasks.batch.recorder.BatchWriter")
+@patch("src.historical.tasks.batch.recorder.BatchProcessor")
+@patch("src.historical.tasks.batch.recorder.BatchLoader")
+async def test_record_asynchronously_without_handler(loader, processor, writer, events_resolver):
+    # Mock the components
+    loader().start_loading = CoroutineMock()
+    processor().start_processing = CoroutineMock()
+    writer().start_writing = CoroutineMock()
+
+    events_resolver.get_handler.return_value = None
+
+    with patch.dict(os.environ, MOCKED_ENVIRONMENT):
+        instance = get_instance()
+
+    await instance.record_asynchronously(
+        contract_address="0x123456",
+        event_id="event_id",
+        from_block=123456,
+        to_block=654321,
+    )
+
+    # Should call the the component's methods
+
+    events_resolver.get_topic.assert_called_once()
+    events_resolver.get_category.assert_called_once()
+    events_resolver.get_handler.assert_called_once()
+    loader().start_loading.assert_called_once()
+    processor().start_processing.assert_called_once()
+    writer().start_writing.assert_called_once()
