@@ -251,12 +251,12 @@ From here, we can navigate to either the RESTful API Docs or RPC API Docs (recal
 
 REST API Docs:
 
-<img src="./docs/assets/exploration/rpc-api-docs-page.png" width="480px" />
+<img src="./docs/assets/exploration/rpc-api-docs-page.png" width="720px" />
 
 
 RPC API Docs:
 
-<img src="./docs/assets/exploration/rest-api-docs-page.png" width="480px" />
+<img src="./docs/assets/exploration/rest-api-docs-page.png" width="720px" />
 
 <br>
 
