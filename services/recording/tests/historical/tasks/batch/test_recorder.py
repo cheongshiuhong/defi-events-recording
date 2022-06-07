@@ -156,7 +156,9 @@ async def test_record_asynchronously(loader, processor, writer, events_resolver)
 @patch("src.historical.tasks.batch.recorder.BatchWriter")
 @patch("src.historical.tasks.batch.recorder.BatchProcessor")
 @patch("src.historical.tasks.batch.recorder.BatchLoader")
-async def test_record_asynchronously_without_handler(loader, processor, writer, events_resolver):
+async def test_record_asynchronously_without_handler(
+    loader, processor, writer, events_resolver
+):
     # Mock the components
     loader().start_loading = CoroutineMock()
     processor().start_processing = CoroutineMock()

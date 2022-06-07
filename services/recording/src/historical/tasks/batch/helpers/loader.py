@@ -69,6 +69,7 @@ class BatchLoader:
                 await output_queue.put(result)
 
                 # Sleep half a second between requests to prevent rate limit
+                # We can remove this if we have $$$ to upgrade our plan lel
                 await asyncio.sleep(0.5)
 
         # Put an empty list to indicate the end

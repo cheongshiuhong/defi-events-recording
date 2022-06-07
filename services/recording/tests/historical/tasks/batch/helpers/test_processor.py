@@ -14,7 +14,7 @@ MOCKED_EVENT_LOG = {
     "topics": ["0x123456789"],
     "data": "0xa1b2c3d4e5",
     "blockNumber": "0x123",
-    "timeStamp": "0x123456",
+    "timeStamp": "0x000001",
     "gasPrice": "0x123",
     "gasUsed": "0x456",
     "logIndex": "0x123",
@@ -23,11 +23,12 @@ MOCKED_EVENT_LOG = {
 }
 MOCKED_BINANCE_KLINE = [
     [
-        "123456789",  # time
+        0,  # open time
         "1234.5678",  # open
         "1234.5678",  # high
         "1234.5678",  # low
         "1234.5678",  # close
+        1,  # close time
     ]
 ]
 
@@ -45,8 +46,22 @@ def test_initialization():
 @patch("src.historical.tasks.batch.helpers.processor.aiohttp")
 async def test_start_processing(aiohttp):
     # Setup the mocked responses
+    mocked_binance_klines = [
+        [
+            t * 1000,
+            "1234.5678",
+            "1234.5678",
+            "1234.5678",
+            "1234.5678",
+            "1234.5678",
+            (t + 1) * 1000,
+        ]
+        for t in range(20)
+    ]
     mocked_binance_response = MagicMock()
-    mocked_binance_response.json = CoroutineMock(return_value=MOCKED_BINANCE_KLINE)
+    mocked_binance_response.json = CoroutineMock(
+        side_effect=[mocked_binance_klines[:10], mocked_binance_klines[10:]]
+    )
 
     # Setup the mocked session
     session_context = await aiohttp.ClientSession().__aenter__()
@@ -54,12 +69,9 @@ async def test_start_processing(aiohttp):
 
     # Setup the mocked queues (2 inputs of 10 events each, 1 empty)
     input_queue = MagicMock()
+    input_batch = [{**MOCKED_EVENT_LOG, "timeStamp": hex(t * 1000)} for t in range(20)]
     input_queue.get = CoroutineMock(
-        side_effect=[
-            [{**MOCKED_EVENT_LOG, "timeStamp": "0x123456789"}] * 10,
-            [{**MOCKED_EVENT_LOG, "timeStamp": "0x987654321"}] * 10,
-            [],  # denotes the end
-        ]
+        side_effect=[input_batch[:10], input_batch[10:], []]
     )
     output_queue = MagicMock()
     output_queue.put = CoroutineMock()

@@ -10,12 +10,6 @@ from src.lib.logger import RecordingLogger
 from src.events import BaseEventHandler
 from .types import EventLog, ProcessedLog
 
-# Constants
-# We choose 15 blocks per batch to be absolutely safe
-# that we will not miss any events since EtherScan
-# does not allow pagination.
-BLOCKS_PER_BATCH = 15
-
 
 class BatchProcessor:
     """
@@ -56,10 +50,6 @@ class BatchProcessor:
 
         async with aiohttp.ClientSession() as session:
             while True:
-                # Sleep for a second in between batches
-                # Caps it to 60 / 2 * BLOCKS_PER_BATCH requests to CEX max
-                await asyncio.sleep(2)
-
                 event_logs = await input_queue.get()
 
                 # End if empty list
@@ -70,34 +60,40 @@ class BatchProcessor:
                 self.__logger.info(f"Processing {len(event_logs)} event logs...")
 
                 # Iterate and retrive unique timestamps at which
-                # we need to fetch to fetch prices at
+                # we need to fetch to fetch prices at,
+                # as well as the max and min.
                 unique_timestamps = set[int]()
+                max_timestamp = 0
+                min_timestamp = 1_000_000_000_000
                 for event_log in event_logs:
-                    unique_timestamps.add(int(event_log["timeStamp"], 16))
+                    timestamp = int(event_log["timeStamp"], 16)
+                    unique_timestamps.add(timestamp)
+                    max_timestamp = max(max_timestamp, timestamp)
+                    min_timestamp = min(min_timestamp, timestamp)
 
-                tasks: dict[int, asyncio.Task[tuple[int, int]]] = {}
-                for timestamp in unique_timestamps:
-                    tasks[timestamp] = asyncio.create_task(
-                        self.__fetch_gas_currency_price(
-                            session,
-                            self.__gas_currency,
-                            self.__quote_currency,
-                            timestamp,
-                        )
-                    )
-
-                # Await the responses
-                gas_currency_prices = {
-                    timestamp: await task for timestamp, task in tasks.items()
-                }
+                # Fetch the range of timestamps
+                gas_currency_prices = await self.__fetch_gas_currency_price(
+                    session,
+                    self.__gas_currency,
+                    self.__quote_currency,
+                    min_timestamp,
+                    max_timestamp,
+                )
 
                 # Tag the price into each event
+                price_index = 0
                 batch_processor_output: list[ProcessedLog] = []
                 for event_log in event_logs:
+                    # Increment the price index until we see
+                    # the one with close_time >= event_time
+                    # We can do this since both are sorted
+                    # and we are guaranteed to have the range covered
+                    event_timestamp = int(event_log["timeStamp"], 16)
+                    while gas_currency_prices[price_index][0] < event_timestamp:
+                        price_index += 1
+
                     # Retrieve the price based on the timestamp
-                    int_price, decimals = gas_currency_prices[
-                        int(event_log["timeStamp"], 16)
-                    ]
+                    int_price, decimals = gas_currency_prices[price_index][1:]
 
                     # Decode the gas prices and compute the gas price as quoted
                     gas_used = int(event_log["gasUsed"], 16)
@@ -142,33 +138,41 @@ class BatchProcessor:
         session: aiohttp.ClientSession,
         gas_currency: str,
         quote_currency: str,
-        timestamp: int,
-    ) -> tuple[int, int]:
+        start_timestamp: int,
+        end_timestamp: int,
+    ) -> list[tuple[int, int, int]]:
         """
-        Fetches the price from a centralized exchange.
-        LRU-cached to reduce the number of calls made.
+        Fetches the price from a centralized exchange and
+        matches the input timestamps with a correspnding price/decimals tuple.
 
         Args:
             session: The asynchronous http session to use to make the request.
-            timestamp: The timestamp in seconds at which to fetch the price.
+            gas_currency: The gas currency to get the price of.
+            quote_currency: The quote currency for the price to be quoted in.
+            start_timestamp: The earliest timestamp to fetch.
+            end_timestamp: The latest timestamp to fetch.
 
         Returns:
-            The tuple of the kline's integer close price and decimal scaling.
+            The list of tuples of the kline's close time,
+            integer close price and decimal scaling.
         """
         # Fetch the minute kline where the timestamp was in
         uri = (
             "https://api.binance.com/api/v3/klines"
             f"?symbol={gas_currency}{quote_currency}&interval=1m"
-            f"&endTime={timestamp * 1000}&limit=1"
+            f"&startTime={(start_timestamp - 60) * 1000}&endTime={end_timestamp * 1000}"
         )
 
         response = await session.get(uri)
         json_response = await response.json()
-        kline = json_response[0]
+        klines = json_response
 
-        # We shall simply use the close price
-        string_price = kline[4]
-        decimals: int = len(string_price) - string_price.find(".") - 1
-        integer_price = int(string_price.replace(".", ""))
+        # Parse the close times and prices
+        close_times_and_prices = []
+        for kline in klines:
+            string_price = kline[4]
+            decimals: int = len(string_price) - string_price.find(".") - 1
+            integer_price = int(string_price.replace(".", ""))
+            close_times_and_prices.append((kline[6], integer_price, decimals))
 
-        return integer_price, decimals
+        return close_times_and_prices

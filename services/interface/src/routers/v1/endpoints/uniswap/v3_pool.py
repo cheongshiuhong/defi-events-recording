@@ -78,7 +78,7 @@ async def get_swaps(
     # Second priority queries
     else:
         # Bad request
-        if not from_block and not to_block:
+        if not from_block or not to_block:
             detail = (
                 'Query must include either "transaction_hash" or '
                 'both ("from_block" & "to_block")'
@@ -86,11 +86,7 @@ async def get_swaps(
             raise HTTPException(status_code=400, detail=detail)
 
         # Block query
-        block_query = {"$gte": from_block}
-        if to_block:
-            block_query["$lte"] = to_block
-
-        query["block_number"] = block_query
+        query["block_number"] = {"$gte": from_block, "$lte": to_block}
 
         # Optional filtering by contract address
         if contract_address:

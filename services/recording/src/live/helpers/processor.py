@@ -452,6 +452,8 @@ class StreamProcessor:
 
         Args:
             session: The asynchronous http session to use to make the request.
+            gas_currency: The gas currency to get the price of.
+            quote_currency: The quote currency for the price to be quoted in.
             timestamp: The timestamp in seconds at which to fetch the price.
 
         Returns:

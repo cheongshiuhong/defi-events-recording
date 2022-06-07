@@ -9,10 +9,12 @@ from .helpers import EventLog, ProcessedLog, BatchLoader, BatchProcessor, BatchW
 from .types import BatchConfig, GasPricingConfig
 
 # Constants
-# We choose 30 blocks per batch to be absolutely safe
+# We choose 50 blocks per batch to be safe
 # that we will not miss any events since EtherScan
-# does not allow pagination.
-BLOCKS_PER_BATCH = 30
+# does not allow pagination (1000 max per response).
+# This limits it to a cap of about 20 events per block,
+# which is somewhat reasonable, at least for Ethereum's TPB.
+BLOCKS_PER_BATCH = 50
 
 
 class BatchRecorder:

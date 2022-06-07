@@ -53,8 +53,6 @@ PARSED_MOCKED_SWAP_EVENT = {
 
 SUCCESS_RESPONSE_PARAMETERS = [
     "/api/v1/uniswap/v3-pool/swaps?transaction_hash=0x123456",
-    "/api/v1/uniswap/v3-pool/swaps?from_block=123",
-    "/api/v1/uniswap/v3-pool/swaps?to_block=321",
     "/api/v1/uniswap/v3-pool/swaps?from_block=123&to_block=321",
     "/api/v1/uniswap/v3-pool/swaps?from_block=123&to_block=321&contract_address=0x123",
 ]
@@ -79,15 +77,23 @@ def test_get_swaps_with_transaction_hash(db, uri):
     assert result["total"] == 100
 
 
+FAILURE_RESPONSE_PARAMETERS = [
+    "/api/v1/uniswap/v3-pool/swaps?from_block=123",
+    "/api/v1/uniswap/v3-pool/swaps?to_block=321",
+    "/api/v1/uniswap/v3-pool/swaps?contract_address=0x123",
+    "/api/v1/uniswap/v3-pool/swaps",
+]
+
+
+@pytest.mark.parametrize("uri", FAILURE_RESPONSE_PARAMETERS)
 @patch("src.routers.v1.endpoints.uniswap.v3_pool.MongoDBClient")
-def test_get_swaps_without_arguments(db):
+def test_get_swaps_without_arguments(db, uri):
     # Mock the db response
     db().swaps.find().sort().skip().to_list = CoroutineMock(
         return_value=10 * [MOCKED_SWAP_EVENT]
     )
     db().swaps.count_documents = CoroutineMock(return_value=100)
 
-    uri = "/api/v1/uniswap/v3-pool/swaps"
     response = client.get(uri)
 
     # Should return 400 - Bad Request

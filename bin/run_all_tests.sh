@@ -27,7 +27,7 @@ run_tests
 
 
 echo
-echo Going into services/interface...
+echo Going into services/recording...
 echo
 
 cd ../recording
