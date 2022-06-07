@@ -92,7 +92,8 @@ async def get_swaps(
         if contract_address:
             query["address"] = contract_address
 
-    cursor = client.swaps.find(query).allow_disk_use(True).sort("block_number").skip(offset)
+    cursor = client.swaps.find(query)
+    cursor = cursor.allow_disk_use(True).sort("block_number").skip(offset)
 
     data, total = await asyncio.gather(
         cursor.to_list(limit), client.swaps.count_documents(query)
