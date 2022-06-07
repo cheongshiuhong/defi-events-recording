@@ -26,7 +26,9 @@
 
 </div>
 
-<img src="https://github.com/cheongshiuhong/defi-events-recording/actions/workflows/tests.yaml/badge.svg" height="22">
+<img src="https://github.com/cheongshiuhong/defi-events-recording/actions/workflows/tests.yaml/badge.svg" height="20">&nbsp;
+<img src="https://img.shields.io/lgtm/alerts/g/cheongshiuhong/defi-events-recording.svg?logo=lgtm&logoWidth=18" height="20">&nbsp;
+<img src="https://img.shields.io/lgtm/grade/python/g/cheongshiuhong/defi-events-recording.svg?logo=lgtm&logoWidth=18" height="20">
 
 </p>
 
