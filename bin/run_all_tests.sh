@@ -6,7 +6,7 @@ run_tests() {
     echo
 
     echo 1. Running style checks with flake8...
-    flake8 .
+    flake8 . --count --exit-zero
     echo
 
     echo 2. Running type checks with mypy...

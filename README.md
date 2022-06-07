@@ -2,6 +2,12 @@
 
 Project to record events emitted from Smart Contracts
 
+<br>
+
+![tests-badge](https://github.com/cheongshiuhong/defi-events-recording/actions/workflows/tests.yaml/badge.svg)
+
+<br>
+
 ## Roadmap
 
 - [x] Live-streaming of swap events
@@ -13,3 +19,6 @@ Project to record events emitted from Smart Contracts
 ## 0. More details about the plan in [Plan.md](docs/0_Plan.md)
 
 ## 1. Interim update in [Interim.md](docs/1_Interim.md)
+
+
+## 2. Documentation & Setup Instructions Coming Soon!
