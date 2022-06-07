@@ -133,9 +133,7 @@ We can further categorize them as such:
 
 - [The Plan](./docs/0_Plan.md)
 - [Interim Update](./docs/1_Interim.md)
-- [Final Update](./docs/0_Plan.md)
-
-incurred some technical debts for the sake of speed
+- [Final Update](./docs/2_Final.md)
 
 <br><br>
 
