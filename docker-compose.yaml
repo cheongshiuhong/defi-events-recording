@@ -12,6 +12,7 @@ services:
       - 27017:27017
     volumes:
       - ./services/database/mongo-init.sh:/docker-entrypoint-initdb.d/mongo-init.sh:ro
+      - ./db:/data/db
     environment:
       # read from .env file
       MONGO_INITDB_DATABASE: ${DB_DATABASE}

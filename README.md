@@ -248,7 +248,7 @@ Once the services are up and running, we can head over to the welcome page @ `ht
 
 ### 4.1. Swagger UI Docs
 
-From here, we can navigate to either the RESTful API Docs or RPC API Docs (recall they are two separate service, merely proxied by Nginx).
+From here, we can navigate to either the RESTful API Docs or RPC API Docs (recall they are two separate services, merely proxied by Nginx).
 
 
 REST API Docs:

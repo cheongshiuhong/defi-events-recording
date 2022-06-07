@@ -21,13 +21,13 @@ jobs:
       - name: Install dev dependencies
         run: pip install -r dev_requirements.txt
       
-      # -------------------
-      # Interface service
-      # -------------------
-      # Flake 8 Linting
+      # Flake 8 Linting Annotations
       - name: Setup flake8 annotations
         uses: rbialon/flake8-annotations@v1
 
+      # -------------------
+      # Interface service
+      # -------------------
       - name: Linting on interface service
         working-directory: ./services/interface
         run: flake8 . --count

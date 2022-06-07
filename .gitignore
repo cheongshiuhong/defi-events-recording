@@ -9,3 +9,6 @@ venv
 
 # Environment variables
 .env
+
+# Database volume
+/db/

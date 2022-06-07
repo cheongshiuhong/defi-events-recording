@@ -56,6 +56,10 @@ class BatchProcessor:
 
         async with aiohttp.ClientSession() as session:
             while True:
+                # Sleep for a second in between batches
+                # Caps it to 60 / 2 * BLOCKS_PER_BATCH requests to CEX max
+                await asyncio.sleep(2)
+
                 event_logs = await input_queue.get()
 
                 # End if empty list
