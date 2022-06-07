@@ -62,7 +62,7 @@ SUCCESS_RESPONSE_PARAMETERS = [
 @patch("src.routers.v1.endpoints.uniswap.v3_pool.MongoDBClient")
 def test_get_swaps_with_transaction_hash(db, uri):
     # Mock the db response
-    db().swaps.find().sort().skip().to_list = CoroutineMock(
+    db().swaps.find().allow_disk_use().sort().skip().to_list = CoroutineMock(
         return_value=10 * [MOCKED_SWAP_EVENT]
     )
     db().swaps.count_documents = CoroutineMock(return_value=100)
@@ -89,7 +89,7 @@ FAILURE_RESPONSE_PARAMETERS = [
 @patch("src.routers.v1.endpoints.uniswap.v3_pool.MongoDBClient")
 def test_get_swaps_without_arguments(db, uri):
     # Mock the db response
-    db().swaps.find().sort().skip().to_list = CoroutineMock(
+    db().swaps.find().allow_disk_use().sort().skip().to_list = CoroutineMock(
         return_value=10 * [MOCKED_SWAP_EVENT]
     )
     db().swaps.count_documents = CoroutineMock(return_value=100)

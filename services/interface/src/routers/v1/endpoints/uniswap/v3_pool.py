@@ -1,5 +1,5 @@
 # Standard libraries
-from typing import Union
+from typing import Optional, Union
 import asyncio
 
 # 3rd party libraries
@@ -27,10 +27,10 @@ def parse_swaps(raw_data: list[EventLog]) -> list[UniswapV3PoolSwap]:
     response_model=UniswapV3PoolSwapResponse,
 )
 async def get_swaps(
-    transaction_hash: str = "",
-    from_block: int = 0,
-    to_block: int = 0,
-    contract_address: str = "",
+    transaction_hash: Optional[str] = None,
+    from_block: Optional[int] = None,
+    to_block: Optional[int] = None,
+    contract_address: Optional[str] = None,
     limit: int = 200,
     offset: int = 0,
 ) -> UniswapV3PoolSwapResponse:
@@ -72,13 +72,13 @@ async def get_swaps(
 
     # First priority - Find by txn hash
     # limit/offfset is not used here
-    if transaction_hash:
+    if transaction_hash is not None:
         query["transaction_hash"] = transaction_hash
 
     # Second priority queries
     else:
         # Bad request
-        if not from_block or not to_block:
+        if from_block is None or to_block is None:
             detail = (
                 'Query must include either "transaction_hash" or '
                 'both ("from_block" & "to_block")'
@@ -92,7 +92,7 @@ async def get_swaps(
         if contract_address:
             query["address"] = contract_address
 
-    cursor = client.swaps.find(query).sort("block_number").skip(offset)
+    cursor = client.swaps.find(query).allow_disk_use(True).sort("block_number").skip(offset)
 
     data, total = await asyncio.gather(
         cursor.to_list(limit), client.swaps.count_documents(query)
